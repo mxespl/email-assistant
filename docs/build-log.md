@@ -33,7 +33,7 @@ A **read-only** AI assistant for my personal Gmail. It categorizes emails, summa
 | 4 | Smart analysis | Per email, Claude returns **structured data (JSON)**: category, urgency (High/Medium/Low + why), deadlines & dates, requested actions | 1, 3, 4 | ✅ Done (Nov 16, 2026) |
 | 5 | Daily overview | One digest: 🔴 urgent first, 📅 deadlines sorted by date, ✅ to-do list. Saved as a file. Plus a small "memory" file so tasks stay until marked done and emails aren't processed twice | 5 | ✅ Done (Nov 16, 2026) |
 | 6 | Run automatically | Windows Task Scheduler runs it every morning (e.g. 7:00) | all | ✅ Done (Nov 16, 2026) |
-| 7 | Later (optional) | Upload to GitHub, keyword filter, topics (food, jobs, coupons…), email count setting, chat-style agent | extras | ⏳ Next: GitHub |
+| 7 | Later (optional) | Upload to GitHub ✅, keyword filter, topics (food, jobs, coupons…), email count setting, chat-style agent | extras | 🟡 GitHub done |
 
 ### Decision log
 - **Nov 16, 2026: dropped draft replies.** The original Phase 4 would have saved reply drafts in Gmail. Dropped because (a) most inbox emails don't need a reply, so drafts would pile up, (b) running hourly would re-draft the same unread email again and again, and (c) it needs the `gmail.compose` scope, which technically also allows sending. The goals above are all read-only, which is simpler and safer. `SCOPES` was reverted to `gmail.readonly` and `token.json` regenerated.
@@ -1528,6 +1528,118 @@ if __name__ == "__main__":
     write_report(memory, warning)
 ```
 
+
+---
+
+## Phase 7 — Upload to GitHub ✅
+
+**Goal:** back up the project and use it as a portfolio piece, **without any personal data**.
+
+**Result:** the repository is on GitHub with code, README and this build log. No secrets or personal files. Done (Nov 16, 2026).
+
+### Concepts
+
+| Thing | Analogy |
+|---|---|
+| **Git** | A "save point" machine that runs **on your laptop** |
+| **GitHub** | An **online cupboard** for those save points (backup + others can see it) |
+| **Commit** | A sealed, labeled box of changes |
+| `git add` | Put things into the box |
+| `git commit -m "..."` | Seal the box and write a label on it |
+| `git push` | Ship the box to GitHub |
+| `.gitignore` | A "No entry" sign on the storeroom door. The sign is public, the storeroom contents are not. That's why `.gitignore` itself **is** uploaded: it only lists file names, never their contents, and it protects anyone who clones the project. |
+
+### Steps
+
+**0. Clean personal info out of the README before the first commit**
+- Git keeps **every old version**. If something personal is committed once, it stays visible in the history even after deleting it later. So clean first, commit second.
+- Removed: full name in a folder path, private folder structure, university and city, languages that hint at nationality, names of services used, job-search hints.
+- The README was also rewritten from about 1,500 lines to about 235. The full step-by-step notes moved here, to `docs/build-log.md`.
+
+**1. GitHub account + install Git**
+- github.com → Sign up. Pick a professional username (it's in the portfolio link `github.com/<username>`).
+- git-scm.com → Download for Windows → all defaults are fine.
+- Close and reopen VS Code, then check: `git --version`
+
+**2. Set your Git identity with a private email**
+- Every commit is stamped with a name + email, and that is **public** on GitHub.
+- GitHub → Settings → **Emails** → turn on **"Keep my email addresses private"** and **"Block command line pushes that expose my email"**.
+- The private address is shown inside the text of the "Keep my email addresses private" option, in the form `<id>+<username>@users.noreply.github.com`.
+```
+git config --global user.name "<username>"
+git config --global user.email "<id>+<username>@users.noreply.github.com"
+git config --global --list
+```
+- `--global` = for every Git project on this laptop, so it's only done once.
+- The active `(venv)` doesn't matter: it only affects Python, not Git.
+
+**3. Safety check before uploading**
+```
+git init
+git status
+```
+- `git status` lists what **would** be saved. Only code, README, `docs/`, `.gitignore`, and `run_daily.bat` may appear.
+- Must **not** appear: `.env`, `credentials.json`, `token.json`, `memory.json`, `daily_overview.md`, `run_log.txt`, `venv/`, `__pycache__/`, and leftovers like `token_backup.json` or `client_secret_*.json` (those aren't in `.gitignore`).
+- Found and fixed: `build-log.md` was in the project root instead of `docs/`, which would have broken the README link.
+
+**4. First commit**
+```
+git add .
+git status
+git commit -m "Initial commit: email assistant v1"
+git branch -M main
+```
+- `git add .` = everything in the folder, **still respecting `.gitignore`**.
+- Warning *"LF will be replaced by CRLF"* is **not an error**. Windows ends lines with CRLF, Mac/Linux with LF. Git just adapts the invisible "Enter" characters, like a plug adapter; the text itself doesn't change.
+- `git branch -M main` renames the default branch from `master` to `main` (GitHub's standard).
+
+**5. Create the GitHub repository and push**
+- github.com → **+** → **New repository** → name `email-assistant` → Public (portfolio) or Private. Can be changed later.
+- ⚠️ Don't tick "Add a README", ".gitignore" or "license": they'd clash with the existing files.
+```
+git remote add origin https://github.com/<username>/email-assistant.git
+git push -u origin main
+```
+- `origin` = nickname for the online cupboard's address.
+- First push opens a GitHub login window → Authorize. Only once.
+
+### Everyday Git loop (after any change)
+```
+git status                      # what changed?
+git add .                       # put changes in the box
+git commit -m "Short message"   # seal it with a label
+git push                        # send it to GitHub
+```
+
+
+---
+
+## Phase 8 — Daily overview as a web page ✅
+
+**Goal:** stop needing VS Code to read the report. The overview is now also a styled web page that opens in any browser.
+
+**Result:** `python daily.py` (and the 07:00 run) writes `daily_overview.html` next to `daily_overview.md`. Double-click it to open. Done (Nov 17, 2026). Auto-opening it every morning is the next step.
+
+### Why
+- Task Scheduler already runs everything at 07:00. The only daily reason to open VS Code was **reading** the `.md` report.
+- Options considered: Telegram bot, auto-open HTML in the browser, emailing the report to yourself, a Windows notification, running in the cloud, or Claude's own scheduled brief. Chose **HTML in the browser**: no new accounts, Gmail stays read-only.
+
+### What changed in `daily.py`
+- `HTML_FILE = "daily_overview.html"`.
+- `build_html(memory, warning)` builds the same content as `build_report`, as a web page with inline CSS.
+- `write_report` now writes **both** files, so `done.py` refreshes the web page too.
+- `_e()` escapes text with `html.escape`, so an email subject containing `<` or `&` can't break the page (standard web safety habit).
+- `_label()` colors due dates: red = today or overdue, amber = within 3 days, blue = later.
+- `daily_overview.html` contains personal email data → added to `.gitignore`.
+
+### Design iterations
+1. First version: rounded cards with thick colored borders and emoji headings. Felt too much like a chat app.
+2. Redesign in a **clean Google/Gmail style**: white header bar with the date, Google colors (blue `#1a73e8`, red `#d93025`), Roboto/Google Sans with Segoe UI fallback, soft shadows instead of outlines, list rows separated by thin lines, section counts in grey pills, square Gmail-like labels, Google's dark palette for dark mode.
+3. Email layout options were mocked up (A: headline list, B: separate cards, C: title with reason box). **Chose C:** the subject is a bold title with an Urgent/Soon label on the right, the sender below it, Claude's summary as normal text, and "Why: …" in a soft grey box.
+
+### Side note: VS Code notification
+VS Code may say *"An environment file is configured but terminal environment injection is disabled"*. Click **Don't Show Again**: the scripts already read `.env` themselves via `load_dotenv()`, and enabling it would put the API key into every terminal.
+
 ---
 
 ## Troubleshooting
@@ -1559,4 +1671,10 @@ if __name__ == "__main__":
 | Task didn't run at 07:00 | Laptop was off/asleep. With "Run task as soon as possible after a scheduled start is missed", it runs when the laptop starts. Also check "AC power only" is unticked. |
 | `UnicodeEncodeError` in `run_log.txt` | `set PYTHONUTF8=1` is missing from `run_daily.bat`. |
 | Dates show in UTC (`+0000`, `GMT`) | Use `_format_date` in `gmail_tools.py` to convert to local time. Check Windows time zone is Europe/Berlin. |
+| `git status` shows a secret file | **Don't commit.** Add its name to `.gitignore`, run `git status` again. |
+| Committed a secret by accident | Treat it as leaked: delete/rotate the key (Anthropic console, or a new OAuth client in Google Cloud). Removing it from history alone isn't enough. |
+| `git push` rejected: "push declined due to email privacy restrictions" | `user.email` isn't the `noreply` address. Fix `git config --global user.email`, then `git commit --amend --reset-author --no-edit` and push again. |
+| Warning "LF will be replaced by CRLF" | Not an error, ignore it. |
+| `daily_overview.html` looks unstyled or broken | Re-run `python daily.py`. If an email subject breaks it, check `_e()` is used for every piece of email text in `build_html`. |
+| HTML report shows yesterday's date | The automatic run didn't happen yet or failed: check `run_log.txt`. |
 | Screenshots of the terminal | They contain personal emails, so blur sensitive parts first |

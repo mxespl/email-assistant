@@ -18,7 +18,7 @@ It never writes, sends, or deletes anything in Gmail.
 - **Summaries:** 1–2 sentences per email, always in English, whatever the email's language
 - **Urgency:** High / Medium / Low, with a short reason
 - **Deadlines and actions:** relative dates ("next Friday", "bis Ende des Monats") are converted to real dates, counted from the email's sent date
-- **Daily overview** (`daily_overview.md`): urgent first, deadlines sorted by date, to-do list, count per category
+- **Daily overview** as a clean web page (`daily_overview.html`) and as Markdown (`daily_overview.md`): urgent first, deadlines sorted by date, to-do list, count per category
 - **Task tracking:** mark tasks as done with `done.py`; they disappear from the next report
 - **No double work:** emails that were already analyzed are skipped, so Claude isn't called (or paid) twice
 - **Scheduled runs:** Windows Task Scheduler builds the report every morning
@@ -43,7 +43,7 @@ Claude (claude-haiku-5-5)
 memory.json (the "notebook")
    │  daily.py: store results, skip known emails, track done tasks
    ▼
-daily_overview.md (the report)
+daily_overview.html + daily_overview.md (the report)
 ```
 
 Each email is analyzed into this JSON shape:
@@ -120,12 +120,12 @@ python hello.py
 
 | Command | What it does |
 |---|---|
-| `python daily.py` | Fetch and analyze new emails, then write `daily_overview.md` |
+| `python daily.py` | Fetch and analyze new emails, then write `daily_overview.html` and `daily_overview.md` |
 | `python done.py` | List open tasks and mark finished ones (e.g. `1,3`) |
 | `python analyze.py` | Print the analysis of the 5 newest unread emails (nothing saved) |
 | `python gmail_tools.py` | Test Gmail access, or log in again |
 
-Open the report in VS Code with right-click → **Open Preview**. Deadlines and to-dos share one numbering, the same as in `done.py`.
+Open the report by double-clicking `daily_overview.html` (it opens in your browser and follows the system's light/dark mode). The same report is also written as `daily_overview.md`. Deadlines and to-dos share one numbering, the same as in `done.py`, which also refreshes both files.
 
 ### Run it automatically every morning (Windows)
 
@@ -140,7 +140,7 @@ To test it, right-click the task → **Run**. **Last Run Result** should be `0x0
 
 ### Daily routine
 
-- Open `daily_overview.md` and check that the date in the title is today.
+- Open `daily_overview.html` and check that the date in the header is today.
 - If the date is old, read the bottom of `run_log.txt`.
 - If the report shows a **"Gmail login expired"** banner, run `python gmail_tools.py`, log in, then run `python daily.py`.
 
@@ -163,7 +163,7 @@ Each email costs one Claude call. Fetching from Gmail is free. After changing `S
 email-assistant/
 ├── gmail_tools.py     # Gmail login, fetching, body decoding, date formatting
 ├── analyze.py         # Claude analysis per email (JSON form)
-├── daily.py           # Main script: notebook + daily overview
+├── daily.py           # Main script: notebook + daily overview (HTML + Markdown)
 ├── done.py            # Mark tasks as done
 ├── run_daily.bat      # Launcher for Task Scheduler
 ├── hello.py           # Claude API connection test
@@ -181,7 +181,7 @@ Created at runtime and excluded from Git (`.gitignore`):
 | `credentials.json` | Google OAuth client |
 | `token.json` | Gmail access token |
 | `memory.json` | Analyzed emails and done tasks |
-| `daily_overview.md` | The daily report |
+| `daily_overview.html` / `daily_overview.md` | The daily report (web page / Markdown) |
 | `run_log.txt` | Output of scheduled runs |
 
 ## Privacy and security
@@ -219,6 +219,8 @@ More cases, and the reasoning behind each fix, are in [docs/build-log.md](docs/b
 - [x] Categorize, summarize, flag urgency, extract deadlines and actions
 - [x] Daily overview with task tracking
 - [x] Scheduled daily runs
+- [x] Daily overview as a web page
+- [ ] Open the page automatically every morning
 - [ ] Keyword filters (e.g. a single sender)
 - [ ] Custom topics (e.g. food, jobs, coupons)
 - [ ] Publish the Google app to remove the weekly re-login
